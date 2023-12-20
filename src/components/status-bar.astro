@@ -1,0 +1,33 @@
+---
+import { dailyStatsSchemaArray, summaryPayload } from "../utils/models";
+import Bar from "./bar.astro";
+const { name, id, url, description } = Astro.props;
+const env = Astro.locals.runtime.env;
+
+const response = await fetch(`https://api.openstatus.dev/v1/monitor/${id}/summary`, {
+  headers: {
+    "x-openstatus-key": env.API_KEY,
+  },
+});
+
+const data = await response.json();
+const result = summaryPayload.parse(data);
+---
+
+<div class="flex flex-col">
+  <div class="mb-2 flex flex-col justify-between text-sm">
+    <div class="flex items-start gap-2 flex-col">
+      <div class="text-foreground line-clamp-1 font-semibold">{name}</div>
+      <div class="text-muted-foreground shrink-0 font-light">{description}</div>
+    </div>
+    <div>
+      <div class="flex flex-row gap-0.5">
+        {
+          result.data.reverse().map((e) => {
+            return <Bar count={e.count} avgLatency={e.avgLatency} ok={e.ok} day={e.day} />;
+          })
+        }
+      </div>
+    </div>
+  </div>
+</div>
