@@ -2,6 +2,11 @@
 
 Built by [OpenStatus](https://www.openstatus.dev)
 
+
+## Demo 🚀
+
+[https://astro.openstat.us](https://astro.openstat.us)
+
 ## What is this? 🤔
 
 It's a simple status page, bring your OpenStatus API key and you're good to go!
