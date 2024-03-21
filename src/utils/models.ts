@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const monitorPeriodicity = [
+  "30s",
   "1m",
   "5m",
   "10m",
@@ -31,10 +32,9 @@ const monitorSchema = z.object({
 export const monitorsSchema = z.array(monitorSchema);
 
 export const dailyStatsSchema = z.object({
-  ok: z.number().int().default(0),
-  count: z.number().int().default(0),
-  avgLatency: z.number().int().default(0),
-  day: z.string(), // in UTC format
+  ok: z.number().int(),
+  count: z.number().int(),
+  day: z.string(),
 });
 
 export const dailyStatsSchemaArray = z.array(dailyStatsSchema);
