@@ -35,7 +35,6 @@ export function Bar(props: DailyStats) {
 
   const total = props.count;
   const failed = Math.abs(props.count - props.ok);
-  const avg = props.avgLatency;
 
   return (
     <HoverCard.Root openDelay={100} closeDelay={100}>
@@ -55,9 +54,6 @@ export function Bar(props: DailyStats) {
             </p>
             <div className="flex justify-between">
               <p className="text-xs font-light text-gray-900">{date}</p>
-              <p className="text-gray-600 text-xs">
-                avg. <code>{avg}ms</code>
-              </p>
             </div>
             <div className="my-1.5 h-px w-full bg-gray-100" />
             <div className="flex items-center justify-between gap-2">
