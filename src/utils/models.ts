@@ -14,7 +14,7 @@ export const periodicityEnum = z.enum(monitorPeriodicity);
 export const flyRegions = ["ams", "iad", "hkg", "jnb", "syd", "gru"] as const;
 export const monitorMethods = ["GET", "POST", "HEAD"] as const;
 
-const MonitorSchema = z.object({
+const monitorSchema = z.object({
   id: z.number(),
   periodicity: periodicityEnum,
   url: z.string().url(),
@@ -29,7 +29,7 @@ const MonitorSchema = z.object({
   active: z.boolean(),
 });
 
-export const MonitorsSchema = z.array(MonitorSchema);
+export const monitorsSchema = z.array(monitorSchema);
 
 export const dailyStatsSchema = z.object({
   ok: z.number().int(),
@@ -39,4 +39,7 @@ export const dailyStatsSchema = z.object({
 
 export const dailyStatsSchemaArray = z.array(dailyStatsSchema);
 
-export const summaryPayload = z.object({data: dailyStatsSchemaArray});
+export const summaryPayload = z.object({ data: dailyStatsSchemaArray });
+
+export type DailyStats = z.infer<typeof dailyStatsSchema>;
+export type Monitor = z.infer<typeof monitorSchema>;

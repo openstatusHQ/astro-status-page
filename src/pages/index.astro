@@ -1,6 +1,8 @@
 ---
-import { MonitorsSchema } from "../utils/models.js";
+import { monitorsSchema } from "../utils/models.js";
 import StatusBar from "../components/status-bar.astro";
+import Callout from "../components/callout.astro";
+
 const env = Astro.locals.runtime.env;
 
 const response = await fetch("https://api.openstatus.dev/v1/monitor", {
@@ -9,11 +11,13 @@ const response = await fetch("https://api.openstatus.dev/v1/monitor", {
   },
 });
 
+// TODO: error handling! if response is not ok (e.g. wrong API_KEY)
+
 const data = await response.json();
 
 
 
-const r = MonitorsSchema.parse(data);
+const r = monitorsSchema.parse(data);
 
 // our monitors id
 const monitorIds = [1,666,771]
@@ -27,56 +31,40 @@ const result = r.filter((m) => monitorIds.find(id => m.id === id) );
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>Astro</title>
+    <meta name="description" content="Fork your own astro status page for your openstatus workspace.">
+    <title>Status Page</title>
   </head>
-  <body class="flex min-h-screen w-full flex-col space-y-6 p-4 md:p-8">
-    <main class="flex h-full w-full flex-1 flex-col">
-      <div class="mx-auto h-full max-w-xl flex-1 px-4 py-4">
+  <body class="flex min-h-screen w-full flex-col p-4 md:p-8">
+    <main class="flex h-full w-full flex-1 flex-col gap-4 mx-auto max-w-sm">
         <div class="mx-auto flex w-full flex-col gap-6">
-          <div
-            class="col-span-full mr-12 flex items-start justify-between lg:mr-0"
-          >
-            <div class="flex w-full flex-col gap-1">
+          <div class="col-span-full flex items-start justify-between">
+            <div class="flex w-full flex-col gap-4">
               <div>
                 <h1 class="font-cal text-3xl">Astro Status Page</h1>
-
-                <p class="text-muted-foreground">
+                <p class="text-gray-600">
                   An open source status page by OpenStatus
                 </p>
               </div>
-
-              <div class="grid gap-4">
-                {
-                  result.map((monitor) => (
-                    <StatusBar
-                      id={monitor.id}
-                      name={monitor.name}
-                      description={monitor.description}
-                      url={monitor.url}
-                    />
-                  ))
-                }
+              <div class="grid gap-2">
+                {result.map((monitor) => <StatusBar {...monitor} />)}
               </div>
             </div>
           </div>
         </div>
-        <footer
-          class="z-10 mx-auto flex w-full max-w-xl items-center justify-between"
-        >
-          <div></div>
+        <Callout />
+        <footer>
           <p class="text-gray-600 text-center text-sm">
             powered by{" "}
             <a
               href="https://www.openstatus.dev"
               target="_blank"
               rel="noreferrer"
-              class="text-foreground underline underline-offset-4 hover:no-underline"
+              class="text-gray-900 underline underline-offset-4 hover:no-underline"
             >
               openstatus.dev
             </a>
           </p>
         </footer>
-      </div>
     </main>
   </body>
 </html>
