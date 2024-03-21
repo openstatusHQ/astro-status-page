@@ -13,7 +13,11 @@ const data = await response.json();
 
 
 
-const result = MonitorsSchema.parse(data);
+const r = MonitorsSchema.parse(data);
+
+// our monitors id
+const monitorIds = [1,666,771]
+const result = r.filter((m) => monitorIds.find(id => m.id === id) );
 
 ---
 

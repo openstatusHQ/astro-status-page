@@ -12,19 +12,19 @@
     "pages:deploy": "astro build && wrangler pages deploy ./dist"
   },
   "dependencies": {
-    "@astrojs/check": "0.3.3",
-    "@astrojs/cloudflare": "8.0.0",
-    "@astrojs/node": "7.0.1",
-    "@astrojs/tailwind": "5.0.3",
-    "astro": "4.0.6",
-    "tailwindcss": "3.3.6",
-    "typescript": "5.3.3",
+    "@astrojs/check": "0.5.9",
+    "@astrojs/cloudflare": "9.1.0",
+    "@astrojs/node": "8.2.5",
+    "@astrojs/tailwind": "5.1.0",
+    "astro": "4.5.8",
+    "tailwindcss": "3.4.1",
+    "typescript": "5.4.3",
     "zod": "3.22.4"
   },
   "devDependencies": {
-    "prettier": "3.1.1",
-    "prettier-plugin-astro": "0.12.2",
-    "wrangler": "3.21.0"
+    "prettier": "3.2.5",
+    "prettier-plugin-astro": "0.13.0",
+    "wrangler": "3.36.0"
 
   }
 }
