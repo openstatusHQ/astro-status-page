@@ -11,7 +11,44 @@ export const monitorPeriodicity = [
 ] as const;
 
 export const periodicityEnum = z.enum(monitorPeriodicity);
-export const flyRegions = ["ams", "iad", "hkg", "jnb", "syd", "gru"] as const;
+export const flyRegions =[
+  "ams",
+  "arn",
+  "atl",
+  "bog",
+  "bom",
+  "bos",
+  "cdg",
+  "den",
+  "dfw",
+  "ewr",
+  "eze",
+  "fra",
+  "gdl",
+  "gig",
+  "gru",
+  "hkg",
+  "iad",
+  "jnb",
+  "lax",
+  "lhr",
+  "mad",
+  "mia",
+  "nrt",
+  "ord",
+  "otp",
+  "phx",
+  "qro",
+  "scl",
+  "sjc",
+  "sea",
+  "sin",
+  "syd",
+  "waw",
+  "yul",
+  "yyz",
+] as const;
+
 export const monitorMethods = ["GET", "POST", "HEAD"] as const;
 
 const monitorSchema = z.object({

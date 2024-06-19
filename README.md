@@ -61,7 +61,7 @@ You can easily deploy your status page on [Cloudflare Pages](https://pages.cloud
 2. run the following command:
 
 ```bash
-pnpm pages:build
+pnpm pages:deploy
 ```
 
 3. Profit 🔥
