@@ -8,6 +8,7 @@ const env = Astro.locals.runtime.env;
 const response = await fetch("https://api.openstatus.dev/v1/monitor", {
   headers: {
     "x-openstatus-key": env.API_KEY,
+    'Cache-Control': 'max-age=600', // Cache for 10 minutes
   },
 });
 
