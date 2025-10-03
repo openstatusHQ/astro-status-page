@@ -47,6 +47,12 @@ export const flyRegions =[
   "waw",
   "yul",
   "yyz",
+  "koyeb_fra",
+  "koyeb_was",
+  "koyeb_sin",
+  "koyeb_tyo",
+  "koyeb_par",
+  "koyeb_sfo",
 ] as const;
 
 export const monitorMethods = ["GET", "POST", "HEAD"] as const;
