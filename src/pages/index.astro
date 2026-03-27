@@ -83,7 +83,18 @@ const maintenances = transformMaintenances(v2Maintenances);
         statusReports={statusReports}
         maintenances={maintenances}
       />
-      <footer class="mt-8">
+      <footer class="mt-8 flex flex-col items-center gap-4">
+        <div class="w-full rounded-lg border border-border px-4 py-3 text-center text-sm text-muted-foreground">
+          Bring your own status page.{" "}
+          <a
+            href="https://github.com/aggmoulik/astro-status-page"
+            target="_blank"
+            rel="noreferrer"
+            class="text-foreground underline underline-offset-4 hover:no-underline"
+          >
+            Go fork it!
+          </a>
+        </div>
         <p class="text-muted-foreground text-center text-sm">
           powered by{" "}
           <a
