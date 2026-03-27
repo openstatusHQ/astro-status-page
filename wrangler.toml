@@ -1,2 +1,3 @@
-name= "statuspage-astro"
-
+name = "statuspage-astro"
+compatibility_date = "2025-09-27"
+compatibility_flags = ["nodejs_compat"]
