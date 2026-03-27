@@ -25,3 +25,5 @@ pnpm-debug.log*
 
 # agent skills
 .agents/skills/
+.claude/skills/
+.windsurf/skills/
