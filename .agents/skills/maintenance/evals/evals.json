@@ -1,0 +1,110 @@
+{
+  "skill_name": "maintenance",
+  "evals": [
+    {
+      "id": "scheduled-database-maintenance",
+      "prompt": "We need to announce database maintenance next Tuesday from 2am to 4am UTC. New deployments will be paused but existing ones won't be affected.",
+      "expected_output": "Should produce a scheduled maintenance announcement that names the component, gives the full time window in UTC, describes what will and won't be affected, and includes any preparation steps.",
+      "assertions": [
+        "Checks for .agents/status-page-context.md",
+        "Produces a scheduled-phase announcement",
+        "Names the affected component (database)",
+        "Includes start and end time in UTC",
+        "States expected duration",
+        "Describes what's affected (new deployments paused)",
+        "States what's NOT affected (existing deployments)",
+        "Includes preparation advice or states none needed",
+        "Suggests next step: post in-progress update when maintenance starts"
+      ],
+      "files": []
+    },
+    {
+      "id": "in-progress-with-status",
+      "prompt": "The database maintenance started. Everything is going as planned so far. Post an in-progress update.",
+      "expected_output": "Should produce an in-progress update that goes beyond boilerplate, confirms things are on track, and reaffirms the expected end time.",
+      "assertions": [
+        "Produces an in-progress update",
+        "Goes beyond 'Scheduled maintenance is currently in progress'",
+        "Confirms things are proceeding as planned",
+        "Reaffirms expected completion time",
+        "States current user impact"
+      ],
+      "files": []
+    },
+    {
+      "id": "completed-ahead-of-schedule",
+      "prompt": "Database maintenance finished 30 minutes early. Everything is back to normal.",
+      "expected_output": "Should produce a completed update stating actual end time, that it finished early, all services are normal, and whether users need to take any action.",
+      "assertions": [
+        "Produces a completed announcement",
+        "States actual completion time",
+        "Notes it finished ahead of schedule",
+        "Confirms all services are operational",
+        "States whether user action is needed"
+      ],
+      "files": []
+    },
+    {
+      "id": "extended-maintenance",
+      "prompt": "The maintenance is taking longer than expected. We originally said 4am UTC but it's looking like 5:30am now because the migration is slower than expected.",
+      "expected_output": "Should produce an extension notice with original and new end times, reason for delay, and confirmation of whether impact has changed.",
+      "assertions": [
+        "Produces an extension notice",
+        "States original end time (04:00 UTC)",
+        "States new estimated end time (05:30 UTC)",
+        "Explains reason for the delay",
+        "Confirms whether user impact has changed",
+        "Sets a time for next update"
+      ],
+      "files": []
+    },
+    {
+      "id": "cancelled-maintenance",
+      "prompt": "We need to cancel the maintenance we announced for tomorrow. Found a bug in the migration script.",
+      "expected_output": "Should produce a cancellation notice referencing the specific maintenance, explaining why, and stating whether it will be rescheduled.",
+      "assertions": [
+        "Produces a cancellation announcement",
+        "References the specific maintenance window",
+        "Explains the reason (bug in migration script)",
+        "States whether it will be rescheduled",
+        "Confirms no current impact to services"
+      ],
+      "files": []
+    },
+    {
+      "id": "short-notice-warning",
+      "prompt": "We need to do emergency maintenance on the API in 2 hours. Full downtime for about 30 minutes.",
+      "expected_output": "Should note that 2 hours is short notice for full downtime (recommended 72h), proceed with the announcement, and suggest treating it as an incident if the urgency warrants it.",
+      "assertions": [
+        "Flags that 2 hours notice is below recommended lead time for full downtime",
+        "Still produces the announcement",
+        "Suggests considering incident-communication if this is urgent/unplanned",
+        "Includes all required elements (time, impact, preparation)"
+      ],
+      "files": []
+    },
+    {
+      "id": "uses-context-file",
+      "prompt": "Write a maintenance announcement for our API maintenance window",
+      "expected_output": "Should read .agents/status-page-context.md and use component names, default maintenance window, and tone from context.",
+      "assertions": [
+        "Reads .agents/status-page-context.md",
+        "Uses component names from context",
+        "References default maintenance window if defined in context",
+        "Matches tone from context"
+      ],
+      "files": [".agents/status-page-context.md"]
+    },
+    {
+      "id": "rejects-incident-request",
+      "prompt": "Our API just went down unexpectedly, help me write something",
+      "expected_output": "Should redirect to incident-communication skill since this is an unplanned outage, not scheduled maintenance.",
+      "assertions": [
+        "Recognizes this is an unplanned incident, not maintenance",
+        "Points user to the incident-communication skill",
+        "Does not write a maintenance announcement"
+      ],
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+{
+  "skill_name": "postmortem",
+  "evals": [
+    {
+      "id": "full-postmortem-with-details",
+      "prompt": "Write a postmortem. Our API went down yesterday from 14:00 to 15:30 UTC. A bad config change reduced the connection pool from 100 to 10, causing connection exhaustion. We rolled back at 15:20 and it recovered by 15:30. About 80% of API requests failed during the outage. Our monitoring caught it within 3 minutes.",
+      "expected_output": "Should produce a complete postmortem using the template with all sections filled in from the provided details, TODO placeholders for unknowns, blameless language, and at least 2-level-deep root cause analysis.",
+      "assertions": [
+        "Checks for .agents/status-page-context.md",
+        "Uses the full postmortem template",
+        "Summary captures the full picture in 2-3 sentences",
+        "Impact section quantifies blast radius (80% of requests)",
+        "Timeline has at least 6 entries",
+        "Root cause goes at least 2 levels deep (config change → why was it possible)",
+        "Uses blameless language throughout (no person blamed)",
+        "Action items have priority levels and TODO owner placeholders",
+        "What went well section is not empty (monitoring detection)",
+        "Where we got lucky section is included",
+        "All times are in UTC"
+      ],
+      "files": []
+    },
+    {
+      "id": "minimal-info-postmortem",
+      "prompt": "We had an outage this morning. The webhooks stopped working for about an hour. Not sure what caused it yet but it's fixed now.",
+      "expected_output": "Should produce a postmortem draft with TODO placeholders for missing information (exact times, root cause, impact metrics), and ask follow-up questions to fill gaps.",
+      "assertions": [
+        "Produces a draft postmortem, not a refusal",
+        "Uses TODO placeholders for unknown details",
+        "Asks follow-up questions for: exact timestamps, root cause, how it was detected, how it was fixed, impact scope",
+        "Still fills in what it can (component: webhooks, duration: ~1 hour)",
+        "Does not invent details"
+      ],
+      "files": []
+    },
+    {
+      "id": "blameless-rewrite",
+      "prompt": "Write a postmortem. John deployed a config change without testing it and it brought down the API for 2 hours. He should have tested in staging first.",
+      "expected_output": "Should reframe the incident using blameless language. The root cause should focus on systemic gaps (no staging enforcement, no config validation) rather than John's actions.",
+      "assertions": [
+        "Does not name John as the cause",
+        "Reframes as a systemic issue (deploy pipeline allows untested changes)",
+        "Root cause section focuses on process/system gaps",
+        "Action items target system improvements, not human behavior",
+        "Does not include 'should have' or 'failed to' about a person"
+      ],
+      "files": []
+    },
+    {
+      "id": "external-audience-postmortem",
+      "prompt": "Write a public postmortem for our customers about the 3-hour checkout outage last week. We need to rebuild trust.",
+      "expected_output": "Should produce a customer-facing postmortem that emphasizes user impact, what was done, and preventive measures. Should be less technical than an internal postmortem, focused on accountability and trust.",
+      "assertions": [
+        "Asks or confirms audience is external/public",
+        "Tone is empathetic and accountable, not defensive",
+        "Avoids deep internal technical details",
+        "Focuses on user impact and what's being done to prevent recurrence",
+        "Includes concrete preventive measures (not just 'we'll do better')",
+        "Does not blame third parties without context"
+      ],
+      "files": []
+    },
+    {
+      "id": "shallow-root-cause-pushback",
+      "prompt": "Root cause: a bad deploy. Can you write the rest of the postmortem?",
+      "expected_output": "Should push back on the shallow root cause and ask probing questions to go deeper before writing the full postmortem.",
+      "assertions": [
+        "Identifies that 'a bad deploy' is too shallow",
+        "Asks at least 2 probing 'why' questions (what was bad about the deploy? why was it possible?)",
+        "Explains the importance of depth in root cause analysis",
+        "Offers to proceed with a draft but flags the root cause section as needing work"
+      ],
+      "files": []
+    },
+    {
+      "id": "uses-context-file",
+      "prompt": "Write a postmortem for the monitoring API outage yesterday",
+      "expected_output": "Should read .agents/status-page-context.md and use component names, severity levels, and past patterns to enrich the postmortem.",
+      "assertions": [
+        "Reads .agents/status-page-context.md",
+        "Uses component names from context",
+        "Classifies severity using levels from context",
+        "Checks past patterns for recurring issues",
+        "Matches tone from context"
+      ],
+      "files": [".agents/status-page-context.md"]
+    },
+    {
+      "id": "rejects-incident-update-request",
+      "prompt": "Our API is down right now, help me write something to post on the status page",
+      "expected_output": "Should redirect the user to the incident-communication skill for active incident updates, not write a postmortem.",
+      "assertions": [
+        "Recognizes this is an active incident, not a postmortem",
+        "Points user to the incident-communication skill",
+        "Does not write a postmortem for an ongoing incident",
+        "Offers to help with the postmortem after the incident is resolved"
+      ],
+      "files": []
+    }
+  ]
+}

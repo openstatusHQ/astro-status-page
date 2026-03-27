@@ -1,0 +1,108 @@
+{
+  "skill_name": "incident-communication",
+  "evals": [
+    {
+      "id": "investigating-api-outage",
+      "prompt": "Our API is returning 500 errors for all requests, started about 10 minutes ago",
+      "expected_output": "Should produce an investigating-phase update that names the API component, describes user impact (500 errors), states what's not affected, includes approximate start time in UTC, and commits to a next-update time.",
+      "assertions": [
+        "Checks for .agents/status-page-context.md",
+        "Produces an investigating-phase update",
+        "Names the affected component (API)",
+        "Describes user-visible impact (500 errors)",
+        "States what is NOT affected",
+        "Includes a timestamp in UTC",
+        "Commits to a next-update time",
+        "Suggests next step: run skill again for 'identified' phase when cause is found"
+      ],
+      "files": []
+    },
+    {
+      "id": "identified-with-workaround",
+      "prompt": "We found the cause — a bad deployment at 14:30 UTC broke the webhook service. We're rolling back. Users can retry failed webhooks manually.",
+      "expected_output": "Should produce an identified-phase update explaining the root cause (bad deployment), the fix (rollback), the actionable workaround (retry manually), and an ETA or next-update commitment.",
+      "assertions": [
+        "Produces an identified-phase update",
+        "Explains root cause in plain language (bad deployment)",
+        "States the fix plan (rolling back)",
+        "Includes actionable user guidance (retry failed webhooks)",
+        "Includes the timestamp (14:30 UTC)",
+        "Sets expectation for next update"
+      ],
+      "files": []
+    },
+    {
+      "id": "monitoring-after-fix",
+      "prompt": "We rolled back the deployment and webhook delivery looks normal again. Want to post a monitoring update.",
+      "expected_output": "Should produce a monitoring-phase update stating the fix was deployed, what it was, that the team is monitoring, and how long they'll monitor before resolving.",
+      "assertions": [
+        "Produces a monitoring-phase update",
+        "States what fix was deployed (rollback)",
+        "Sets a monitoring duration",
+        "Tells users if action is needed",
+        "Suggests next step: resolve when stable"
+      ],
+      "files": []
+    },
+    {
+      "id": "resolved-with-summary",
+      "prompt": "The webhook incident is over. Started 14:30 UTC, fixed by 15:15 UTC. Bad deployment caused webhook delivery failures for about 45 minutes. Around 2000 webhooks failed.",
+      "expected_output": "Should produce a resolved update with exact time window, root cause summary, impact quantification, and postmortem commitment.",
+      "assertions": [
+        "Produces a resolved-phase update",
+        "Includes exact start and end times in UTC",
+        "Summarizes root cause",
+        "Quantifies impact (2000 failed webhooks, 45 min duration)",
+        "Mentions whether a postmortem will follow",
+        "Suggests using the postmortem skill"
+      ],
+      "files": []
+    },
+    {
+      "id": "ambiguous-phase",
+      "prompt": "Our dashboard is slow, help me write a status update",
+      "expected_output": "Should ask the user which phase they're in (investigating, identified, etc.) before writing the update, or default to investigating if the situation clearly suggests it.",
+      "assertions": [
+        "Determines or asks about the current phase",
+        "Asks clarifying questions about impact scope",
+        "Does not produce a vague update without sufficient detail"
+      ],
+      "files": []
+    },
+    {
+      "id": "uses-context-file",
+      "prompt": "Write an investigating update for our API being down",
+      "expected_output": "Should read .agents/status-page-context.md and use the tone, component names, and severity levels defined there to write the update.",
+      "assertions": [
+        "Reads .agents/status-page-context.md",
+        "Uses component names from context (not generic names)",
+        "Matches the tone defined in context",
+        "Applies severity-appropriate update cadence from context"
+      ],
+      "files": [".agents/status-page-context.md"]
+    },
+    {
+      "id": "no-context-file",
+      "prompt": "Write an incident update — we don't have the context file set up yet",
+      "expected_output": "Should suggest running status-page-context skill first, but proceed if user wants to skip. Should still follow all principles without the context file.",
+      "assertions": [
+        "Checks for .agents/status-page-context.md",
+        "Suggests running status-page-context skill",
+        "Proceeds without it if user wants",
+        "Still follows all 6 principles (scope, impact, actionable, timestamps, next-update, resolved-summary)"
+      ],
+      "files": []
+    },
+    {
+      "id": "rejects-postmortem-request",
+      "prompt": "Write a postmortem for yesterday's outage",
+      "expected_output": "Should redirect the user to the postmortem skill instead of attempting to write a postmortem.",
+      "assertions": [
+        "Does not write a postmortem",
+        "Points user to the postmortem skill",
+        "Offers to help with a resolved update if the incident isn't closed yet"
+      ],
+      "files": []
+    }
+  ]
+}

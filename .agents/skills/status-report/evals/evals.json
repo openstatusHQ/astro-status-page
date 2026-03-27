@@ -1,0 +1,99 @@
+{
+  "skill_name": "status-report",
+  "evals": [
+    {
+      "id": "monthly-report-full-data",
+      "prompt": "Write a monthly status report for March 2026. API uptime: 99.97%, Dashboard: 99.99%, Webhooks: 99.2%. Target is 99.9% for all. We had one major incident on March 14 (webhook failure, 47 min) and one minor (dashboard latency, 12 min). MTTR was 28 min, down from 45 min in Feb.",
+      "expected_output": "Should produce a complete monthly report with executive summary leading with headline number, uptime table with targets and month-over-month comparison, incident summaries with fixes, and improvement/looking-ahead sections.",
+      "assertions": [
+        "Checks for .agents/status-page-context.md",
+        "Produces a monthly report using the template",
+        "Executive summary leads with headline uptime number",
+        "Uptime table includes SLA targets and vs-target comparison",
+        "Webhooks below-target is explicitly called out",
+        "Both incidents are summarized with severity, duration, and fix status",
+        "MTTR trend is shown (28 min vs 45 min)",
+        "Includes looking ahead section"
+      ],
+      "files": []
+    },
+    {
+      "id": "weekly-report",
+      "prompt": "Write a quick weekly status report. No incidents this week. All systems above target. We have database maintenance scheduled next Tuesday.",
+      "expected_output": "Should produce a concise weekly report that states no incidents, confirms uptime, and mentions upcoming maintenance. Should be short (~1 page).",
+      "assertions": [
+        "Produces a weekly report format",
+        "States no incidents clearly",
+        "Confirms systems are above target",
+        "Mentions upcoming maintenance with date",
+        "Keeps it concise (not a full monthly report)"
+      ],
+      "files": []
+    },
+    {
+      "id": "quarterly-report",
+      "prompt": "Write a Q1 2026 quarterly reliability report. Overall uptime: 99.94%. We had 2 critical incidents, 5 major, 8 minor. MTTR averaged 32 min. Error budget: 40% remaining. We shipped automated rollbacks and improved monitoring coverage from 60% to 85%.",
+      "expected_output": "Should produce a full quarterly report with multi-quarter trends (asking for previous quarter data if needed), SLA performance, top incidents, reliability investments, and outlook.",
+      "assertions": [
+        "Produces a quarterly report format",
+        "Includes quarterly metrics table",
+        "Shows incident counts by severity",
+        "Includes MTTR and error budget status",
+        "Lists reliability investments shipped (automated rollbacks, monitoring)",
+        "Includes lessons learned section",
+        "Includes outlook for next quarter",
+        "Asks for previous quarter data for trends if not provided"
+      ],
+      "files": []
+    },
+    {
+      "id": "below-target-honesty",
+      "prompt": "Write a monthly report. Our API was at 99.7% uptime this month, target is 99.9%. We had a 2-hour outage.",
+      "expected_output": "Should not hide or minimize the miss. Should explicitly call out the target gap, describe the incident, and connect it to fixes.",
+      "assertions": [
+        "Explicitly states API missed its SLA target",
+        "Quantifies the gap (99.7% vs 99.9%)",
+        "Describes the outage that caused the miss",
+        "Asks about or mentions what was done to fix it",
+        "Does not use language that minimizes the miss"
+      ],
+      "files": []
+    },
+    {
+      "id": "no-data-available",
+      "prompt": "Write a monthly status report. I don't really have exact uptime numbers.",
+      "expected_output": "Should ask what data is available, suggest how to get metrics, and offer to write a qualitative report if no numbers exist. Should not invent metrics.",
+      "assertions": [
+        "Does not invent uptime numbers",
+        "Asks what data is available",
+        "Suggests where to get metrics (monitoring tools, status page history)",
+        "Offers a qualitative alternative if no numbers exist",
+        "Flags that quantitative reports are more valuable"
+      ],
+      "files": []
+    },
+    {
+      "id": "uses-context-file",
+      "prompt": "Write a monthly status report for our services",
+      "expected_output": "Should read .agents/status-page-context.md and use component names, SLA targets, and tone from context to structure the report.",
+      "assertions": [
+        "Reads .agents/status-page-context.md",
+        "Uses component names from context",
+        "Uses SLA targets from context for comparison",
+        "Matches tone from context"
+      ],
+      "files": [".agents/status-page-context.md"]
+    },
+    {
+      "id": "rejects-incident-request",
+      "prompt": "We're having an outage right now, can you write a report?",
+      "expected_output": "Should redirect to incident-communication for active incidents. Status reports are for periodic summaries, not live incidents.",
+      "assertions": [
+        "Recognizes this is an active incident, not a periodic report",
+        "Points user to the incident-communication skill",
+        "Offers to help with the status report after the incident is resolved"
+      ],
+      "files": []
+    }
+  ]
+}

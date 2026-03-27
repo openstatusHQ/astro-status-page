@@ -1,0 +1,80 @@
+{
+  "skill_name": "status-page-context",
+  "evals": [
+    {
+      "id": "first-time-setup",
+      "prompt": "Set up my status page context",
+      "expected_output": "Should check for existing .agents/status-page-context.md, find none, offer auto-draft or start-from-scratch modes, then walk through all sections of the template.",
+      "assertions": [
+        "Checks for .agents/status-page-context.md",
+        "Offers auto-draft (scan codebase) and start-from-scratch options",
+        "Covers all sections: Service Overview, Components, SLA, Tone, Severity, Escalation, Channels, Past Patterns",
+        "Writes output to .agents/status-page-context.md"
+      ],
+      "files": []
+    },
+    {
+      "id": "auto-draft-from-codebase",
+      "prompt": "Auto-generate my status page context from the codebase",
+      "expected_output": "Should scan README, config files, package.json, and any status page configuration to pre-fill as much as possible, then ask the user to confirm and fill gaps.",
+      "assertions": [
+        "Reads README and config files for product info",
+        "Pre-fills company name and product description",
+        "Identifies components from codebase if possible",
+        "Clearly marks sections that need user input",
+        "Asks user to review and complete missing sections"
+      ],
+      "files": []
+    },
+    {
+      "id": "update-existing-context",
+      "prompt": "Update my status page context — we added a new Webhooks component",
+      "expected_output": "Should read existing .agents/status-page-context.md, add the new component to the components table, and write the updated file.",
+      "assertions": [
+        "Reads existing .agents/status-page-context.md",
+        "Adds new component to the components table",
+        "Asks for description and criticality of the new component",
+        "Preserves all other existing content",
+        "Writes updated file back to .agents/status-page-context.md"
+      ],
+      "files": []
+    },
+    {
+      "id": "tone-configuration",
+      "prompt": "Our incident updates should sound like a calm senior engineer explaining to a peer, not a PR statement",
+      "expected_output": "Should update the Communication Tone section with specific voice characteristics, example sentences, and words to use/avoid that match this style.",
+      "assertions": [
+        "Updates Communication Tone section specifically",
+        "Captures the 'senior engineer to peer' voice",
+        "Includes words to avoid (corporate jargon, deflections)",
+        "Includes words to use (direct, technical terms)",
+        "Provides at least one example sentence in the described tone"
+      ],
+      "files": []
+    },
+    {
+      "id": "incomplete-context-warning",
+      "prompt": "I just want to set the company name and skip everything else",
+      "expected_output": "Should allow setting the company name but warn that incomplete context will reduce the quality of other skills' output. Should not block the user but clearly flag what's missing.",
+      "assertions": [
+        "Allows partial completion without blocking",
+        "Warns about impact on downstream skills",
+        "Lists which sections are incomplete",
+        "Offers to come back and fill in sections later",
+        "Still writes the file with completed sections"
+      ],
+      "files": []
+    },
+    {
+      "id": "rejects-unrelated-request",
+      "prompt": "Write me an incident update for our API outage",
+      "expected_output": "Should redirect the user to the incident-communication skill instead of attempting to write an incident update.",
+      "assertions": [
+        "Does not write an incident update",
+        "Points user to the incident-communication skill",
+        "Offers to set up or update status page context if needed"
+      ],
+      "files": []
+    }
+  ]
+}
