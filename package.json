@@ -30,5 +30,8 @@
     "prettier": "3.3.2",
     "prettier-plugin-astro": "0.14.0",
     "wrangler": "4.77.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "workerd"]
   }
 }
