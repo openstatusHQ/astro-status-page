@@ -18,8 +18,8 @@ Fork it, tweak it, make it yours 🚀
 
 - [Astro](https://astro.build)
 - [OpenStatus](https://www.openstatus.dev)
-- [Cloudflare Pages](https://pages.cloudflare.com)
-- [Tailwind CSS](https://tailwindcss.com)
+- [Cloudflare Workers](https://workers.cloudflare.com)
+- [Tailwind CSS v4](https://tailwindcss.com)
 
 ## Getting Started 🚀
 
@@ -45,23 +45,23 @@ To start your own status page, you'll need to create an account on [OpenStatus](
 5. Start the dev server
 
 ```bash
-pnpm pages:dev
+pnpm dev
 ```
 6. Customize it 🧑‍🎨
 
 
-### Deployement 🚀
+### Deployment 🚀
 
-You can easily deploy your status page on [Cloudflare Pages](https://pages.cloudflare.com).
+You can easily deploy your status page on [Cloudflare Workers](https://workers.cloudflare.com).
 
 1. Set the API key in the environment variables of your worker
    - Go to your worker settings
    - Add a new variable named `API_KEY` and paste your OpenStatus API key
 
-2. run the following command:
+2. Run the following command:
 
 ```bash
-pnpm pages:deploy
+pnpm deploy
 ```
 
 3. Profit 🔥
