@@ -12,16 +12,16 @@
     "pages:deploy": "astro build && wrangler pages deploy ./dist"
   },
   "dependencies": {
-    "@astrojs/check": "0.7.0",
-    "@astrojs/cloudflare": "10.4.1",
-    "@astrojs/node": "8.3.1",
-    "@astrojs/react": "3.6.0",
-    "@astrojs/tailwind": "5.1.0",
+    "@astrojs/check": "0.9.8",
+    "@astrojs/cloudflare": "13.1.4",
+    "@astrojs/node": "10.0.4",
+    "@astrojs/react": "5.0.2",
     "@radix-ui/react-hover-card": "1.0.7",
-    "astro": "5.15.9",
+    "@tailwindcss/vite": "^4.2.2",
+    "astro": "6.1.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "tailwindcss": "3.4.4",
+    "tailwindcss": "^4.2.2",
     "typescript": "5.4.5",
     "zod": "3.23.8"
   },
@@ -30,6 +30,6 @@
     "@types/react-dom": "18.3.0",
     "prettier": "3.3.2",
     "prettier-plugin-astro": "0.14.0",
-    "wrangler": "3.61.0"
+    "wrangler": "4.77.0"
   }
 }
