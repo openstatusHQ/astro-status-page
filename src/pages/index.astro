@@ -1,30 +1,65 @@
 ---
-import { monitorsSchema } from "../utils/models.js";
-import StatusBar from "../components/status-bar.astro";
-import Callout from "../components/callout.astro";
+import "../styles/global.css";
+import { StatusPage } from "../components/status-page";
+import {
+  fetchMonitors,
+  fetchMonitorDailySummary,
+  fetchStatusReports,
+  fetchMaintenances,
+  dailyStatsToBarData,
+  computeUptime,
+  computeOverallStatus,
+  transformStatusReports,
+  transformMaintenances,
+} from "../lib/api";
+import type { StatusType } from "../components/blocks/status.types";
 
 const API_KEY = import.meta.env.API_KEY;
-// const env = Astro.locals.runtime.env;
+// For Cloudflare bindings, use: import { env } from 'cloudflare:workers';
 
-const response = await fetch("https://api.openstatus.dev/v1/monitor", {
-  headers: {
-    "x-openstatus-key": API_KEY,
-    'Cache-Control': 'max-age=600', // Cache for 10 minutes
-  },
+const monitorIds = ["9172"];
+
+// Fetch all data in parallel
+const [allMonitors, v2StatusReports, v2Maintenances] = await Promise.all([
+  fetchMonitors(API_KEY),
+  fetchStatusReports(API_KEY),
+  fetchMaintenances(API_KEY),
+]);
+
+// Filter to our monitors
+const monitors = allMonitors.filter((m) => monitorIds.includes(m.id));
+
+// Fetch daily summaries for each monitor (REST v1 — v2 only has aggregated data)
+const summaries = await Promise.all(
+  monitors.map((m) => fetchMonitorDailySummary(API_KEY, m.id)),
+);
+
+// Build monitor data for the component
+const monitorData = monitors.map((monitor, i) => {
+  const stats = summaries[i];
+  const barData = dailyStatsToBarData(stats);
+  const uptime = computeUptime(stats);
+  const status = computeOverallStatus(stats);
+  const variant: Exclude<StatusType, "empty"> =
+    status === "empty" ? "success" : status;
+
+  return {
+    id: Number(monitor.id),
+    name: monitor.name || monitor.url,
+    description: ("description" in monitor ? monitor.description : null) as string | null,
+    variant,
+    uptime: `${uptime.toFixed(2)}%`,
+    barData,
+  };
 });
 
-// TODO: error handling! if response is not ok (e.g. wrong API_KEY)
+// Compute overall status from all monitors
+const allStats = summaries.flat();
+const overallStatus = computeOverallStatus(allStats);
 
-const data = await response.json();
-
-
-
-const r = monitorsSchema.parse(data);
-
-// our monitors id
-const monitorIds = [1,666,771]
-const result = r.filter((m) => monitorIds.find(id => m.id === id) );
-
+// Transform v2 responses to UI component types
+const statusReports = transformStatusReports(v2StatusReports);
+const maintenances = transformMaintenances(v2Maintenances);
 ---
 
 <html lang="en">
@@ -33,40 +68,45 @@ const result = r.filter((m) => monitorIds.find(id => m.id === id) );
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <meta name="description" content="Fork your own astro status page for your openstatus workspace.">
+    <meta
+      name="description"
+      content="Fork your own astro status page for your openstatus workspace."
+    />
     <title>Status Page</title>
   </head>
-  <body class="flex min-h-screen w-full flex-col p-4 md:p-8">
-    <main class="flex h-full w-full flex-1 flex-col gap-4 mx-auto max-w-sm">
-        <div class="mx-auto flex w-full flex-col gap-6">
-          <div class="col-span-full flex items-start justify-between">
-            <div class="flex w-full flex-col gap-4">
-              <div>
-                <h1 class="font-cal text-3xl">Astro Status Page</h1>
-                <p class="text-gray-600">
-                  An open source status page by OpenStatus
-                </p>
-              </div>
-              <div class="grid gap-2">
-                {result.map((monitor) => <StatusBar {...monitor} />)}
-              </div>
-            </div>
-          </div>
+  <body class="min-h-screen bg-background text-foreground">
+    <main class="mx-auto max-w-xl px-4 py-8">
+      <StatusPage
+        client:load
+        overallStatus={overallStatus}
+        monitors={monitorData}
+        statusReports={statusReports}
+        maintenances={maintenances}
+      />
+      <footer class="mt-8 flex flex-col items-center gap-4">
+        <div class="w-full rounded-lg border border-border px-4 py-3 text-center text-sm text-muted-foreground">
+          Bring your own status page.{" "}
+          <a
+            href="https://github.com/aggmoulik/astro-status-page"
+            target="_blank"
+            rel="noreferrer"
+            class="text-foreground underline underline-offset-4 hover:no-underline"
+          >
+            Go fork it!
+          </a>
         </div>
-        <Callout />
-        <footer>
-          <p class="text-gray-600 text-center text-sm">
-            powered by{" "}
-            <a
-              href="https://www.openstatus.dev"
-              target="_blank"
-              rel="noreferrer"
-              class="text-gray-900 underline underline-offset-4 hover:no-underline"
-            >
-              openstatus.dev
-            </a>
-          </p>
-        </footer>
+        <p class="text-muted-foreground text-center text-sm">
+          powered by{" "}
+          <a
+            href="https://www.openstatus.dev"
+            target="_blank"
+            rel="noreferrer"
+            class="text-foreground underline underline-offset-4 hover:no-underline"
+          >
+            openstatus.dev
+          </a>
+        </p>
+      </footer>
     </main>
   </body>
 </html>
