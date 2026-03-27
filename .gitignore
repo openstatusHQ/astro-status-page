@@ -22,3 +22,6 @@ pnpm-debug.log*
 .dev.vars
 
 .wrangler/
+
+# agent skills
+.agents/skills/
