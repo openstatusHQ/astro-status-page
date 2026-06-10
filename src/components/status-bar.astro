@@ -1,11 +1,11 @@
 ---
+import { API_KEY } from "astro:env/server";
 import { summaryPayload, type Monitor } from "../utils/models";
 import { Bar } from './bar';
 
 interface Props extends Monitor {}
 
 const { name, id,  description } = Astro.props;
-const API_KEY = import.meta.env.API_KEY;
 
 const response = await fetch(`https://api.openstatus.dev/v1/monitor/${id}/summary`, {
   headers: {

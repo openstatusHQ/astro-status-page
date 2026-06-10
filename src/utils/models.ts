@@ -11,7 +11,7 @@ export const monitorPeriodicity = [
 ] as const;
 
 export const periodicityEnum = z.enum(monitorPeriodicity);
-export const flyRegions =[
+export const flyRegions = [
   "ams",
   "arn",
   "atl",
@@ -56,7 +56,7 @@ export const flyRegions =[
   "railway_us-west2",
   "railway_us-east4-eqdc4a",
   "railway_europe-west4-drams3a",
-  "railway_asia-southeast1-eqsg3a"
+  "railway_asia-southeast1-eqsg3a",
 ] as const;
 
 export const monitorMethods = ["GET", "POST", "HEAD"] as const;

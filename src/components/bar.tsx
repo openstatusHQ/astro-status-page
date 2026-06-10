@@ -46,7 +46,7 @@ export function Bar(props: DailyStats) {
           side="bottom"
           align="center"
           sideOffset={4}
-          className="border rounded-md shadow-sm bg-white p-3"
+          className="border border-gray-200 rounded-md shadow-xs bg-white p-3"
         >
           <div>
             <p className="text-sm font-semibold text-gray-900">
