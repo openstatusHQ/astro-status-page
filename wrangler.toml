@@ -1,2 +1,8 @@
-name= "statuspage-astro"
+name = "astro-status-page"
+main = "./dist/_worker.js/index.js"
+compatibility_date = "2026-06-11"
+compatibility_flags = ["nodejs_compat"]
 
+[assets]
+directory = "./dist"
+binding = "ASSETS"
