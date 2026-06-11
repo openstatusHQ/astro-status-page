@@ -19,7 +19,6 @@ const response = await fetch("https://api.openstatus.dev/v1/monitor", {
 const data = await response.json();
 const r = monitorsSchema.parse(data);
 
-// our monitors id
 const monitorIds = MONITOR_IDS.split(",")
   .map((id) => Number(id.trim()))
   .filter((id) => !isNaN(id));
