@@ -8,8 +8,6 @@
     "build": "astro check && astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "pages:dev": "wrangler pages dev --compatibility-date=2023-12-06 -- astro dev",
-    "pages:deploy": "astro build && wrangler pages deploy ./dist",
     "deploy": "wrangler deploy",
     "deploy:preview": "wrangler versions upload",
     "format": "prettier --write ."
