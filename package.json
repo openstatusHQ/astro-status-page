@@ -9,7 +9,9 @@
     "preview": "astro preview",
     "astro": "astro",
     "pages:dev": "wrangler pages dev --compatibility-date=2023-12-06 -- astro dev",
-    "pages:deploy": "astro build && wrangler pages deploy ./dist"
+    "pages:deploy": "astro build && wrangler pages deploy ./dist",
+    "deploy": "wrangler deploy",
+    "deploy:preview": "wrangler versions upload"
   },
   "dependencies": {
     "@astrojs/check": "0.7.0",
@@ -30,6 +32,10 @@
     "@types/react-dom": "18.3.0",
     "prettier": "3.3.2",
     "prettier-plugin-astro": "0.14.0",
-    "wrangler": "3.61.0"
-  }
+    "wrangler": "4.99.0"
+  },
+  "engines": {
+    "node": "24.15.0"
+  },
+  "packageManager": "pnpm@11.5.3"
 }
