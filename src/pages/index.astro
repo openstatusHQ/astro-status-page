@@ -1,5 +1,5 @@
 ---
-import { API_KEY } from "astro:env/server";
+import { API_KEY, MONITOR_IDS } from "astro:env/server";
 import { StatusPage } from "../components/status-page";
 import { monitorsSchema, summaryPayload } from "../utils/models.js";
 import { overallStatus, toMonitorStatus } from "../utils/status";
@@ -20,7 +20,9 @@ const data = await response.json();
 const r = monitorsSchema.parse(data);
 
 // our monitors id
-const monitorIds = [10022];
+const monitorIds = MONITOR_IDS.split(",")
+  .map((id) => Number(id.trim()))
+  .filter((id) => !isNaN(id));
 const selected = r.filter((m) => monitorIds.find((id) => m.id === id));
 
 const monitors = await Promise.all(

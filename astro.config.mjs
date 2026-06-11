@@ -31,6 +31,7 @@ export default defineConfig({
   env: {
     schema: {
       API_KEY: envField.string({ context: "server", access: "secret" }),
+      MONITOR_IDS: envField.string({ context: "server", access: "secret" }),
     },
   },
   vite: {
