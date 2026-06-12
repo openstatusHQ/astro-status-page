@@ -20,7 +20,7 @@
     "@connectrpc/connect-web": "^2.1.1",
     "@date-fns/utc": "2.1.0",
     "@fontsource-variable/geist": "^5.2.9",
-    "@openstatus/sdk-node": "^0.1.6",
+    "@openstatus/sdk-node": "^0.1.7",
     "@radix-ui/react-hover-card": "^1.1.16",
     "@radix-ui/react-slot": "^1.2.5",
     "@tailwindcss/vite": "4.3.0",

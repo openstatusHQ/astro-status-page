@@ -1,6 +1,7 @@
 import type {
   Maintenance,
   StatusReport,
+  StatusReportImpact,
   StatusReportUpdateType,
   StatusType,
 } from "@/components/blocks/status.types";
@@ -13,6 +14,7 @@ import type {
 import {
   createOpenStatusClient,
   OverallStatus,
+  PageComponentImpact,
   PageComponentType,
   StatusReportStatus,
   TimeRange,
@@ -64,6 +66,14 @@ const updateTypeByStatus: Record<StatusReportStatus, StatusReportUpdateType> = {
   [StatusReportStatus.RESOLVED]: "resolved",
 };
 
+const impactByPageImpact: Record<PageComponentImpact, StatusReportImpact> = {
+  [PageComponentImpact.UNSPECIFIED]: "operational",
+  [PageComponentImpact.OPERATIONAL]: "operational",
+  [PageComponentImpact.DEGRADED_PERFORMANCE]: "degraded_performance",
+  [PageComponentImpact.PARTIAL_OUTAGE]: "partial_outage",
+  [PageComponentImpact.MAJOR_OUTAGE]: "major_outage",
+};
+
 const variantPriority: Record<PageVariant, number> = {
   error: 3,
   degraded: 2,
@@ -92,6 +102,10 @@ function toStatusReport(
       date: new Date(update.date),
       message: update.message,
       status: updateTypeByStatus[update.status],
+      impactChanges: update.componentImpacts.map((c) => ({
+        name: componentNames.get(c.pageComponentId) ?? c.pageComponentId,
+        impact: impactByPageImpact[c.impact],
+      })),
     })),
   };
 }
