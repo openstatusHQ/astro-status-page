@@ -1,41 +1,17 @@
 ---
-import { API_KEY, MONITOR_IDS } from "astro:env/server";
+import { ConnectError } from "@connectrpc/connect";
+import { API_KEY, STATUS_PAGE_ID } from "astro:env/server";
 import { StatusPage } from "../components/status-page";
-import { monitorsSchema, summaryPayload } from "../utils/models.js";
-import { overallStatus, toMonitorStatus } from "../utils/status";
+import { loadStatusPage } from "../utils/openstatus";
 import "../styles/global.css";
 
-const headers = {
-  "x-openstatus-key": API_KEY,
-  "Cache-Control": "max-age=600", // Cache for 10 minutes
-};
-
-const response = await fetch("https://api.openstatus.dev/v1/monitor", {
-  headers,
-});
-
-// TODO: error handling! if response is not ok (e.g. wrong API_KEY)
-
-const data = await response.json();
-const r = monitorsSchema.parse(data);
-
-const monitorIds = MONITOR_IDS.split(",")
-  .map((id) => Number(id.trim()))
-  .filter((id) => !isNaN(id));
-const selected = r.filter((m) => monitorIds.find((id) => m.id === id));
-
-const monitors = await Promise.all(
-  selected.map(async (monitor) => {
-    const res = await fetch(
-      `https://api.openstatus.dev/v1/monitor/${monitor.id}/summary`,
-      { headers },
-    );
-    const summary = summaryPayload.parse(await res.json());
-    return toMonitorStatus(monitor, summary.data.reverse());
-  }),
-);
-
-const status = overallStatus(monitors);
+let view = null;
+try {
+  view = await loadStatusPage({ apiKey: API_KEY, pageId: STATUS_PAGE_ID });
+} catch (error) {
+  if (!(error instanceof ConnectError)) throw error;
+  console.error(`Failed to load status page: ${error.code} ${error.message}`);
+}
 ---
 
 <html lang="en">
@@ -48,9 +24,19 @@ const status = overallStatus(monitors);
       name="description"
       content="Fork your own astro status page for your openstatus workspace."
     />
-    <title>Status Page</title>
+    <title>{view?.title ?? "Status Page"}</title>
   </head>
   <body>
-    <StatusPage monitors={monitors} status={status} client:load />
+    {
+      view ? (
+        <StatusPage view={view} client:load />
+      ) : (
+        <main class="mx-auto max-w-2xl px-3 py-8">
+          <p class="text-muted-foreground">
+            Status is temporarily unavailable. Please try again later.
+          </p>
+        </main>
+      )
+    }
   </body>
 </html>

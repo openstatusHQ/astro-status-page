@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig, envField } from "astro/config";
 import cloudflare from "@astrojs/cloudflare";
 import react from "@astrojs/react";
@@ -19,6 +20,9 @@ const ssrPreBundle = {
       "react/jsx-dev-runtime",
       "@radix-ui/react-hover-card",
       "astro/env/runtime",
+      "@openstatus/sdk-node",
+      "@connectrpc/connect",
+      "@connectrpc/connect-web",
     ];
   },
 };
@@ -31,10 +35,19 @@ export default defineConfig({
   env: {
     schema: {
       API_KEY: envField.string({ context: "server", access: "secret" }),
-      MONITOR_IDS: envField.string({ context: "server", access: "secret" }),
+      STATUS_PAGE_ID: envField.string({ context: "server", access: "secret" }),
     },
   },
   vite: {
     plugins: [tailwindcss(), ssrPreBundle],
+    resolve: {
+      // sdk-node hard-wires the Node http2 transport, which workerd lacks;
+      // the shim provides a fetch-based, workerd-safe createConnectTransport.
+      alias: {
+        "@connectrpc/connect-node": fileURLToPath(
+          new URL("./src/utils/connect-web-workerd.ts", import.meta.url),
+        ),
+      },
+    },
   },
 });

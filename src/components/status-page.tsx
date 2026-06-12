@@ -1,16 +1,17 @@
 import { StatusBanner } from "@/components/blocks/status-banner";
-import { StatusBar } from "@/components/blocks/status-bar";
 import {
   StatusComponent,
-  StatusComponentBody,
-  StatusComponentFooter,
+  StatusComponentDescription,
   StatusComponentHeader,
   StatusComponentHeaderLeft,
   StatusComponentHeaderRight,
+  StatusComponentIcon,
   StatusComponentStatus,
   StatusComponentTitle,
   StatusComponentUptime,
 } from "@/components/blocks/status-component";
+import { StatusComponentGroup } from "@/components/blocks/status-component-group";
+import { StatusFeed } from "@/components/blocks/status-feed";
 import {
   StatusPageFooter,
   StatusPageFooterContent,
@@ -34,17 +35,32 @@ import {
   StatusHeader,
   StatusTitle,
 } from "@/components/blocks/status-layout";
-import type { MonitorStatus, MonitorVariant } from "@/utils/status";
+import { Separator } from "@/components/ui/separator";
+import type { ComponentView, StatusPageView } from "@/utils/openstatus";
 
-const TITLE = "Astro Status Page";
+function PageComponent({ component }: { component: ComponentView }) {
+  return (
+    <StatusComponent variant={component.variant}>
+      <StatusComponentHeader>
+        <StatusComponentHeaderLeft>
+          <StatusComponentIcon />
+          <StatusComponentTitle>{component.name}</StatusComponentTitle>
+          <StatusComponentDescription>
+            {component.description}
+          </StatusComponentDescription>
+        </StatusComponentHeaderLeft>
+        <StatusComponentHeaderRight>
+          {component.uptime && (
+            <StatusComponentUptime>{component.uptime}</StatusComponentUptime>
+          )}
+          <StatusComponentStatus />
+        </StatusComponentHeaderRight>
+      </StatusComponentHeader>
+    </StatusComponent>
+  );
+}
 
-export function StatusPage({
-  monitors,
-  status,
-}: {
-  monitors: MonitorStatus[];
-  status: MonitorVariant;
-}) {
+export function StatusPage({ view }: { view: StatusPageView }) {
   return (
     <StatusPageShell>
       <StatusPageHeader className="w-full border-b">
@@ -53,7 +69,7 @@ export function StatusPage({
             <div className="flex items-center justify-center">
               <StatusPageHeaderBrandButton>
                 <a href="/">
-                  <StatusPageHeaderBrandFallback title={TITLE} />
+                  <StatusPageHeaderBrandFallback title={view.title} />
                 </a>
               </StatusPageHeaderBrandButton>
             </div>
@@ -62,37 +78,39 @@ export function StatusPage({
       </StatusPageHeader>
       <StatusPageMain>
         <div className="flex flex-col gap-6">
-          <Status variant={status}>
+          <Status variant={view.status}>
             <StatusHeader>
-              <StatusTitle>{TITLE}</StatusTitle>
-              <StatusDescription>
-                An open source status page by OpenStatus
-              </StatusDescription>
+              <StatusTitle>{view.title}</StatusTitle>
+              {view.description && (
+                <StatusDescription>{view.description}</StatusDescription>
+              )}
             </StatusHeader>
-            <StatusBanner status={status} />
+            <StatusBanner status={view.status} />
             <StatusContent>
-              {monitors.map((monitor) => (
-                <StatusComponent key={monitor.id} variant={monitor.variant}>
-                  <StatusComponentHeader>
-                    <StatusComponentHeaderLeft>
-                      <StatusComponentTitle>
-                        {monitor.name}
-                      </StatusComponentTitle>
-                    </StatusComponentHeaderLeft>
-                    <StatusComponentHeaderRight>
-                      <StatusComponentUptime>
-                        {monitor.uptime}
-                      </StatusComponentUptime>
-                      <StatusComponentStatus />
-                    </StatusComponentHeaderRight>
-                  </StatusComponentHeader>
-                  <StatusComponentBody>
-                    <StatusBar data={monitor.data} />
-                    <StatusComponentFooter data={monitor.data} />
-                  </StatusComponentBody>
-                </StatusComponent>
+              {view.ungrouped.map((component) => (
+                <PageComponent key={component.id} component={component} />
+              ))}
+              {view.groups.map((group) => (
+                <StatusComponentGroup
+                  key={group.id}
+                  title={group.title}
+                  status={group.variant}
+                  defaultOpen={group.defaultOpen}
+                >
+                  {group.components.map((component) => (
+                    <PageComponent key={component.id} component={component} />
+                  ))}
+                </StatusComponentGroup>
               ))}
             </StatusContent>
+            <Separator className="my-6" />
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Recent Events</h2>
+              <StatusFeed
+                statusReports={view.statusReports}
+                maintenances={view.maintenances}
+              />
+            </div>
           </Status>
         </div>
       </StatusPageMain>
