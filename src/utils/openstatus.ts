@@ -12,6 +12,7 @@ import type {
   StatusReport as SdkStatusReport,
 } from "@openstatus/sdk-node";
 import {
+  createAuthInterceptor,
   createOpenStatusClient,
   OverallStatus,
   PageComponentImpact,
@@ -19,6 +20,22 @@ import {
   StatusReportStatus,
   TimeRange,
 } from "@openstatus/sdk-node";
+import { createConnectTransport } from "@connectrpc/connect-web";
+
+const API_URL = "https://api.openstatus.dev/rpc";
+
+// workerd's fetch only implements redirect "follow" | "manual"; connect-web
+// defaults to "error". The SDK accepts a custom transport for exactly this.
+function createClient(apiKey: string) {
+  return createOpenStatusClient({
+    transport: createConnectTransport({
+      baseUrl: API_URL,
+      interceptors: [createAuthInterceptor(apiKey)],
+      fetch: (input, init) =>
+        globalThis.fetch(input, { ...init, redirect: "manual" }),
+    }),
+  });
+}
 
 export type PageVariant = Exclude<StatusType, "empty">;
 
@@ -130,7 +147,7 @@ export async function loadStatusPage(options: {
   apiKey: string;
   pageId: string;
 }): Promise<StatusPageView> {
-  const client = createOpenStatusClient({ apiKey: options.apiKey });
+  const client = createClient(options.apiKey);
   const pages = client.statusPage.v1.StatusPageService;
   const identifier = { case: "id" as const, value: options.pageId };
 
