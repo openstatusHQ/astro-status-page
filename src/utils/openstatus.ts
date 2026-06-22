@@ -1,3 +1,4 @@
+import type { StatusCalendarMarker } from "@/components/blocks/status-calendar";
 import type {
   Maintenance,
   StatusBarData,
@@ -7,6 +8,12 @@ import type {
   StatusReportUpdateType,
   StatusType,
 } from "@/components/blocks/status.types";
+import {
+  eachDayOfInterval,
+  max as maxDate,
+  min as minDate,
+  startOfDay,
+} from "date-fns";
 import type {
   ComponentEvent,
   MaintenanceSummary,
@@ -69,6 +76,7 @@ export interface StatusPageView {
   groups: GroupView[];
   statusReports: StatusReport[];
   maintenances: Maintenance[];
+  markers: StatusCalendarMarker[];
 }
 
 const variantByStatus: Record<OverallStatus, PageVariant> = {
@@ -200,6 +208,54 @@ function toStatusReport(
   };
 }
 
+// Mirrors openstatus's own status-page calendar mapping: one marker on a
+// report's start day, one per day a maintenance spans. Incidents come from an
+// internal field the SDK doesn't expose and are filtered out via eventTypes.
+function toCalendarMarkers(
+  reports: StatusReport[],
+  maintenances: Maintenance[],
+): StatusCalendarMarker[] {
+  const markers: StatusCalendarMarker[] = [];
+
+  for (const report of reports) {
+    const updates = [...report.updates].sort(
+      (a, b) => a.date.getTime() - b.date.getTime(),
+    );
+    const startedAt = updates[0]?.date;
+    if (!startedAt) continue;
+    const lastUpdate = updates[updates.length - 1];
+    const resolvedAt =
+      lastUpdate?.status === "resolved" ? lastUpdate.date : null;
+    markers.push({
+      id: `report-${report.id}`,
+      date: startOfDay(startedAt),
+      status: "degraded",
+      type: "report",
+      name: report.title,
+      from: startedAt,
+      to: resolvedAt,
+    });
+  }
+
+  for (const m of maintenances) {
+    const start = startOfDay(minDate([m.from, m.to]));
+    const end = startOfDay(maxDate([m.from, m.to]));
+    for (const day of eachDayOfInterval({ start, end })) {
+      markers.push({
+        id: `maintenance-${m.id}-${day.toISOString()}`,
+        date: day,
+        status: "info",
+        type: "maintenance",
+        name: m.title,
+        from: m.from,
+        to: m.to,
+      });
+    }
+  }
+
+  return markers;
+}
+
 function toMaintenance(
   maintenance: MaintenanceSummary,
   componentNames: Map<string, string>,
@@ -277,17 +333,21 @@ export async function loadStatusPage(options: {
     content.components.map((c) => [c.id, c.name]),
   );
 
+  const statusReports = content.statusReports.map((r) =>
+    toStatusReport(r, componentNames),
+  );
+  const maintenances = content.maintenances.map((m) =>
+    toMaintenance(m, componentNames),
+  );
+
   return {
     title: content.statusPage?.title ?? "Status Page",
     description: content.statusPage?.description ?? "",
     status: variantByStatus[overall.overallStatus],
     ungrouped,
     groups,
-    statusReports: content.statusReports.map((r) =>
-      toStatusReport(r, componentNames),
-    ),
-    maintenances: content.maintenances.map((m) =>
-      toMaintenance(m, componentNames),
-    ),
+    statusReports,
+    maintenances,
+    markers: toCalendarMarkers(statusReports, maintenances),
   };
 }

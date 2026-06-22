@@ -1,5 +1,6 @@
 import { StatusBanner } from "@/components/blocks/status-banner";
 import { StatusBar } from "@/components/blocks/status-bar";
+import { StatusCalendar } from "@/components/blocks/status-calendar";
 import {
   StatusComponent,
   StatusComponentBody,
@@ -115,6 +116,12 @@ export function StatusPage({ view }: { view: StatusPageView }) {
             <Separator className="my-6" />
             <div className="space-y-4">
               <h2 className="text-lg font-semibold">Recent Events</h2>
+              <StatusCalendar
+                title="Calendar"
+                markers={view.markers}
+                eventTypes={["report", "maintenance"]}
+                disableFuture
+              />
               <StatusFeed
                 statusReports={view.statusReports}
                 maintenances={view.maintenances}
