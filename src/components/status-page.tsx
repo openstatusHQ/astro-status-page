@@ -1,7 +1,10 @@
 import { StatusBanner } from "@/components/blocks/status-banner";
+import { StatusBar } from "@/components/blocks/status-bar";
 import {
   StatusComponent,
+  StatusComponentBody,
   StatusComponentDescription,
+  StatusComponentFooter,
   StatusComponentHeader,
   StatusComponentHeaderLeft,
   StatusComponentHeaderRight,
@@ -56,6 +59,12 @@ function PageComponent({ component }: { component: ComponentView }) {
           <StatusComponentStatus />
         </StatusComponentHeaderRight>
       </StatusComponentHeader>
+      {component.data.length > 0 && (
+        <StatusComponentBody>
+          <StatusBar data={component.data} />
+          <StatusComponentFooter data={component.data} />
+        </StatusComponentBody>
+      )}
     </StatusComponent>
   );
 }

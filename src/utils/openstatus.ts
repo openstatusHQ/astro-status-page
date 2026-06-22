@@ -1,24 +1,29 @@
 import type {
   Maintenance,
+  StatusBarData,
+  StatusEventType,
   StatusReport,
   StatusReportImpact,
   StatusReportUpdateType,
   StatusType,
 } from "@/components/blocks/status.types";
 import type {
+  ComponentEvent,
   MaintenanceSummary,
   PageComponent,
+  PageComponentDailySummary,
   PageComponentGroup,
   StatusReport as SdkStatusReport,
 } from "@openstatus/sdk-node";
 import {
+  ComponentDayStatus,
+  ComponentEventStatus,
+  ComponentEventType,
   createAuthInterceptor,
   createOpenStatusClient,
   OverallStatus,
   PageComponentImpact,
-  PageComponentType,
   StatusReportStatus,
-  TimeRange,
 } from "@openstatus/sdk-node";
 import { createConnectTransport } from "@connectrpc/connect-web";
 
@@ -45,6 +50,7 @@ export interface ComponentView {
   description: string;
   variant: PageVariant;
   uptime: string | null;
+  data: StatusBarData[];
 }
 
 export interface GroupView {
@@ -91,12 +97,79 @@ const impactByPageImpact: Record<PageComponentImpact, StatusReportImpact> = {
   [PageComponentImpact.MAJOR_OUTAGE]: "major_outage",
 };
 
+const barStatusByDayStatus: Record<ComponentDayStatus, StatusType> = {
+  [ComponentDayStatus.UNSPECIFIED]: "empty",
+  [ComponentDayStatus.OPERATIONAL]: "success",
+  [ComponentDayStatus.DEGRADED]: "degraded",
+  [ComponentDayStatus.DOWN]: "error",
+  [ComponentDayStatus.MAINTENANCE]: "info",
+  [ComponentDayStatus.EMPTY]: "empty",
+};
+
+const eventTypeByType: Record<ComponentEventType, StatusEventType> = {
+  [ComponentEventType.UNSPECIFIED]: "incident",
+  [ComponentEventType.MAINTENANCE]: "maintenance",
+  [ComponentEventType.INCIDENT]: "incident",
+  [ComponentEventType.REPORT]: "report",
+};
+
+const eventStatusOverride: Record<ComponentEventStatus, PageVariant | undefined> =
+  {
+    [ComponentEventStatus.UNSPECIFIED]: undefined,
+    [ComponentEventStatus.OPERATIONAL]: "success",
+    [ComponentEventStatus.DEGRADED]: "degraded",
+    [ComponentEventStatus.DOWN]: "error",
+    [ComponentEventStatus.MAINTENANCE]: "info",
+  };
+
 const variantPriority: Record<PageVariant, number> = {
   error: 3,
   degraded: 2,
   info: 1,
   success: 0,
 };
+
+function uptimeFromBuckets(summary: PageComponentDailySummary): string | null {
+  let ok = 0n;
+  let count = 0n;
+  for (const b of summary.buckets) {
+    ok += b.ok;
+    count += b.count;
+  }
+  if (count === 0n) return null;
+  return `${((Number(ok) / Number(count)) * 100).toFixed(2)}%`;
+}
+
+function toStatusBarData(summary: PageComponentDailySummary): StatusBarData[] {
+  const eventsByDay = new Map<string, ComponentEvent[]>();
+  for (const ev of summary.events) {
+    const key = ev.from.slice(0, 10);
+    eventsByDay.set(key, [...(eventsByDay.get(key) ?? []), ev]);
+  }
+  return summary.buckets.map((b): StatusBarData => {
+    const impact =
+      b.impact !== undefined ? impactByPageImpact[b.impact] : undefined;
+    const card: StatusBarData["card"] = [];
+    if (b.ok > 0n) card.push({ status: "success", value: String(b.ok) });
+    if (b.degraded > 0n)
+      card.push({ status: "degraded", value: String(b.degraded), impact });
+    if (b.error > 0n)
+      card.push({ status: "error", value: String(b.error), impact });
+    return {
+      day: b.day,
+      bar: [{ status: barStatusByDayStatus[b.status], height: 100 }],
+      card,
+      events: (eventsByDay.get(b.day.slice(0, 10)) ?? []).map((ev) => ({
+        id: ev.id,
+        name: ev.name,
+        type: eventTypeByType[ev.type],
+        from: new Date(ev.from),
+        to: ev.to ? new Date(ev.to) : null,
+        status: eventStatusOverride[ev.status],
+      })),
+    };
+  });
+}
 
 function worstVariant(variants: PageVariant[]): PageVariant {
   return variants.reduce(
@@ -151,9 +224,10 @@ export async function loadStatusPage(options: {
   const pages = client.statusPage.v1.StatusPageService;
   const identifier = { case: "id" as const, value: options.pageId };
 
-  const [content, overall] = await Promise.all([
+  const [content, overall, daily] = await Promise.all([
     pages.getStatusPageContent({ identifier }),
     pages.getOverallStatus({ identifier }),
+    pages.getPageComponentDailySummary({ identifier, days: 45 }),
   ]);
 
   const variantByComponent = new Map(
@@ -163,32 +237,21 @@ export async function loadStatusPage(options: {
     ]),
   );
 
-  const uptimeByComponent = new Map<string, string>();
-  await Promise.all(
-    content.components
-      .filter((c) => c.type === PageComponentType.MONITOR)
-      .map(async (c) => {
-        const summary = await client.monitor.v1.MonitorService.getMonitorSummary(
-          { id: c.monitorId, timeRange: TimeRange.TIME_RANGE_14D },
-        );
-        const total =
-          summary.totalSuccessful +
-          summary.totalDegraded +
-          summary.totalFailed;
-        if (total > 0n) {
-          const ratio = Number(summary.totalSuccessful) / Number(total);
-          uptimeByComponent.set(c.id, `${(ratio * 100).toFixed(2)}%`);
-        }
-      }),
+  const dailyByComponent = new Map(
+    daily.components.map((c) => [c.componentId, c]),
   );
 
-  const toView = (c: PageComponent): ComponentView => ({
-    id: c.id,
-    name: c.name,
-    description: c.description,
-    variant: variantByComponent.get(c.id) ?? "info",
-    uptime: uptimeByComponent.get(c.id) ?? null,
-  });
+  const toView = (c: PageComponent): ComponentView => {
+    const summary = dailyByComponent.get(c.id);
+    return {
+      id: c.id,
+      name: c.name,
+      description: c.description,
+      variant: variantByComponent.get(c.id) ?? "info",
+      uptime: summary ? uptimeFromBuckets(summary) : null,
+      data: summary ? toStatusBarData(summary) : [],
+    };
+  };
 
   const byOrder = (a: PageComponent, b: PageComponent) => a.order - b.order;
   const ungrouped = content.components
