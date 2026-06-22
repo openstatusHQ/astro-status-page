@@ -30,6 +30,7 @@ import {
   createOpenStatusClient,
   OverallStatus,
   PageComponentImpact,
+  PageComponentType,
   StatusReportStatus,
 } from "@openstatus/sdk-node";
 import { createConnectTransport } from "@connectrpc/connect-web";
@@ -146,6 +147,20 @@ function uptimeFromBuckets(summary: PageComponentDailySummary): string | null {
   }
   if (count === 0n) return null;
   return `${((Number(ok) / Number(count)) * 100).toFixed(2)}%`;
+}
+
+// Static components have no monitor data; mirror the official page by filling
+// the track with the component's current status (operational → green).
+function staticBars(
+  summary: PageComponentDailySummary,
+  variant: PageVariant,
+): StatusBarData[] {
+  return summary.buckets.map((b) => ({
+    day: b.day,
+    bar: [{ status: variant, height: 100 }],
+    card: [],
+    events: [],
+  }));
 }
 
 function toStatusBarData(summary: PageComponentDailySummary): StatusBarData[] {
@@ -325,13 +340,20 @@ export async function loadStatusPage(options: {
 
   const toView = (c: PageComponent): ComponentView => {
     const summary = dailyByComponent.get(c.id);
+    const variant = variantByComponent.get(c.id) ?? "info";
+    const isStatic = c.type === PageComponentType.STATIC;
     return {
       id: c.id,
       name: c.name,
       description: c.description,
-      variant: variantByComponent.get(c.id) ?? "info",
-      uptime: summary ? uptimeFromBuckets(summary) : null,
-      data: summary ? toStatusBarData(summary) : [],
+      variant,
+      // static components carry no uptime metric, only a declared status
+      uptime: isStatic || !summary ? null : uptimeFromBuckets(summary),
+      data: !summary
+        ? []
+        : isStatic
+          ? staticBars(summary, variant)
+          : toStatusBarData(summary),
     };
   };
 
