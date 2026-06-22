@@ -208,12 +208,14 @@ function toStatusReport(
   };
 }
 
-// Mirrors openstatus's own status-page calendar mapping: one marker on a
-// report's start day, one per day a maintenance spans. Incidents come from an
-// internal field the SDK doesn't expose and are filtered out via eventTypes.
+// Mirrors openstatus's own status-page calendar mapping: page-level reports
+// (start day) + maintenances (per day), plus per-component incidents from the
+// daily summary (per day, deduped across components). Raw daily check failures
+// without a recorded incident stay in the bars only, by design.
 function toCalendarMarkers(
   reports: StatusReport[],
   maintenances: Maintenance[],
+  components: PageComponentDailySummary[],
 ): StatusCalendarMarker[] {
   const markers: StatusCalendarMarker[] = [];
 
@@ -250,6 +252,30 @@ function toCalendarMarkers(
         from: m.from,
         to: m.to,
       });
+    }
+  }
+
+  const seenIncidents = new Set<string>();
+  for (const component of components) {
+    for (const ev of component.events) {
+      if (ev.type !== ComponentEventType.INCIDENT) continue;
+      if (seenIncidents.has(ev.id)) continue;
+      seenIncidents.add(ev.id);
+      const from = new Date(ev.from);
+      const to = ev.to ? new Date(ev.to) : null;
+      const start = startOfDay(from);
+      const end = startOfDay(to ?? new Date());
+      for (const day of eachDayOfInterval({ start, end })) {
+        markers.push({
+          id: `incident-${ev.id}-${day.toISOString()}`,
+          date: day,
+          status: "error",
+          type: "incident",
+          name: ev.name,
+          from,
+          to,
+        });
+      }
     }
   }
 
@@ -348,6 +374,6 @@ export async function loadStatusPage(options: {
     groups,
     statusReports,
     maintenances,
-    markers: toCalendarMarkers(statusReports, maintenances),
+    markers: toCalendarMarkers(statusReports, maintenances, daily.components),
   };
 }

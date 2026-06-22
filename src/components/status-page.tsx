@@ -119,7 +119,7 @@ export function StatusPage({ view }: { view: StatusPageView }) {
               <StatusCalendar
                 title="Calendar"
                 markers={view.markers}
-                eventTypes={["report", "maintenance"]}
+                eventTypes={["report", "maintenance", "incident"]}
                 disableFuture
               />
               <StatusFeed
