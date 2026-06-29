@@ -1,0 +1,401 @@
+import type { StatusCalendarMarker } from "@/components/blocks/status-calendar";
+import type {
+  Maintenance,
+  StatusBarData,
+  StatusEventType,
+  StatusReport,
+  StatusReportImpact,
+  StatusReportUpdateType,
+  StatusType,
+} from "@/components/blocks/status.types";
+import {
+  eachDayOfInterval,
+  max as maxDate,
+  min as minDate,
+  startOfDay,
+} from "date-fns";
+import type {
+  ComponentEvent,
+  MaintenanceSummary,
+  PageComponent,
+  PageComponentDailySummary,
+  PageComponentGroup,
+  StatusReport as SdkStatusReport,
+} from "@openstatus/sdk-node";
+import {
+  ComponentDayStatus,
+  ComponentEventStatus,
+  ComponentEventType,
+  createAuthInterceptor,
+  createOpenStatusClient,
+  OverallStatus,
+  PageComponentImpact,
+  PageComponentType,
+  StatusReportStatus,
+} from "@openstatus/sdk-node";
+import { createConnectTransport } from "@connectrpc/connect-web";
+
+const API_URL = "https://api.openstatus.dev/rpc";
+
+// workerd's fetch only implements redirect "follow" | "manual"; connect-web
+// defaults to "error". The SDK accepts a custom transport for exactly this.
+function createClient(apiKey: string) {
+  return createOpenStatusClient({
+    transport: createConnectTransport({
+      baseUrl: API_URL,
+      interceptors: [createAuthInterceptor(apiKey)],
+      fetch: (input, init) =>
+        globalThis.fetch(input, { ...init, redirect: "manual" }),
+    }),
+  });
+}
+
+export type PageVariant = Exclude<StatusType, "empty">;
+
+export interface ComponentView {
+  id: string;
+  name: string;
+  description: string;
+  variant: PageVariant;
+  uptime: string | null;
+  data: StatusBarData[];
+}
+
+export interface GroupView {
+  id: string;
+  title: string;
+  defaultOpen: boolean;
+  variant: PageVariant;
+  components: ComponentView[];
+}
+
+export interface StatusPageView {
+  title: string;
+  description: string;
+  status: PageVariant;
+  ungrouped: ComponentView[];
+  groups: GroupView[];
+  statusReports: StatusReport[];
+  maintenances: Maintenance[];
+  markers: StatusCalendarMarker[];
+}
+
+const variantByStatus: Record<OverallStatus, PageVariant> = {
+  [OverallStatus.UNSPECIFIED]: "info",
+  [OverallStatus.OPERATIONAL]: "success",
+  [OverallStatus.DEGRADED]: "degraded",
+  [OverallStatus.PARTIAL_OUTAGE]: "error",
+  [OverallStatus.MAJOR_OUTAGE]: "error",
+  [OverallStatus.MAINTENANCE]: "info",
+  [OverallStatus.UNKNOWN]: "info",
+};
+
+const updateTypeByStatus: Record<StatusReportStatus, StatusReportUpdateType> = {
+  [StatusReportStatus.UNSPECIFIED]: "investigating",
+  [StatusReportStatus.INVESTIGATING]: "investigating",
+  [StatusReportStatus.IDENTIFIED]: "identified",
+  [StatusReportStatus.MONITORING]: "monitoring",
+  [StatusReportStatus.RESOLVED]: "resolved",
+};
+
+const impactByPageImpact: Record<PageComponentImpact, StatusReportImpact> = {
+  [PageComponentImpact.UNSPECIFIED]: "operational",
+  [PageComponentImpact.OPERATIONAL]: "operational",
+  [PageComponentImpact.DEGRADED_PERFORMANCE]: "degraded_performance",
+  [PageComponentImpact.PARTIAL_OUTAGE]: "partial_outage",
+  [PageComponentImpact.MAJOR_OUTAGE]: "major_outage",
+};
+
+const barStatusByDayStatus: Record<ComponentDayStatus, StatusType> = {
+  [ComponentDayStatus.UNSPECIFIED]: "empty",
+  [ComponentDayStatus.OPERATIONAL]: "success",
+  [ComponentDayStatus.DEGRADED]: "degraded",
+  [ComponentDayStatus.DOWN]: "error",
+  [ComponentDayStatus.MAINTENANCE]: "info",
+  [ComponentDayStatus.EMPTY]: "empty",
+};
+
+const eventTypeByType: Record<ComponentEventType, StatusEventType> = {
+  [ComponentEventType.UNSPECIFIED]: "incident",
+  [ComponentEventType.MAINTENANCE]: "maintenance",
+  [ComponentEventType.INCIDENT]: "incident",
+  [ComponentEventType.REPORT]: "report",
+};
+
+const eventStatusOverride: Record<ComponentEventStatus, PageVariant | undefined> =
+  {
+    [ComponentEventStatus.UNSPECIFIED]: undefined,
+    [ComponentEventStatus.OPERATIONAL]: "success",
+    [ComponentEventStatus.DEGRADED]: "degraded",
+    [ComponentEventStatus.DOWN]: "error",
+    [ComponentEventStatus.MAINTENANCE]: "info",
+  };
+
+const variantPriority: Record<PageVariant, number> = {
+  error: 3,
+  degraded: 2,
+  info: 1,
+  success: 0,
+};
+
+function uptimeFromBuckets(summary: PageComponentDailySummary): string | null {
+  let ok = 0n;
+  let count = 0n;
+  for (const b of summary.buckets) {
+    ok += b.ok;
+    count += b.count;
+  }
+  if (count === 0n) return null;
+  return `${((Number(ok) / Number(count)) * 100).toFixed(2)}%`;
+}
+
+// Static components have no monitor data; mirror the official page by filling
+// the track with the component's current status (operational → green).
+function staticBars(
+  summary: PageComponentDailySummary,
+  variant: PageVariant,
+): StatusBarData[] {
+  return summary.buckets.map((b) => ({
+    day: b.day,
+    bar: [{ status: variant, height: 100 }],
+    card: [],
+    events: [],
+  }));
+}
+
+function toStatusBarData(summary: PageComponentDailySummary): StatusBarData[] {
+  const eventsByDay = new Map<string, ComponentEvent[]>();
+  for (const ev of summary.events) {
+    const key = ev.from.slice(0, 10);
+    eventsByDay.set(key, [...(eventsByDay.get(key) ?? []), ev]);
+  }
+  return summary.buckets.map((b): StatusBarData => {
+    const impact =
+      b.impact !== undefined ? impactByPageImpact[b.impact] : undefined;
+    const card: StatusBarData["card"] = [];
+    if (b.ok > 0n) card.push({ status: "success", value: String(b.ok) });
+    if (b.degraded > 0n)
+      card.push({ status: "degraded", value: String(b.degraded), impact });
+    if (b.error > 0n)
+      card.push({ status: "error", value: String(b.error), impact });
+    return {
+      day: b.day,
+      bar: [{ status: barStatusByDayStatus[b.status], height: 100 }],
+      card,
+      events: (eventsByDay.get(b.day.slice(0, 10)) ?? []).map((ev) => ({
+        id: ev.id,
+        name: ev.name,
+        type: eventTypeByType[ev.type],
+        from: new Date(ev.from),
+        to: ev.to ? new Date(ev.to) : null,
+        status: eventStatusOverride[ev.status],
+      })),
+    };
+  });
+}
+
+function worstVariant(variants: PageVariant[]): PageVariant {
+  return variants.reduce(
+    (worst, v) => (variantPriority[v] > variantPriority[worst] ? v : worst),
+    "success",
+  );
+}
+
+function toStatusReport(
+  report: SdkStatusReport,
+  componentNames: Map<string, string>,
+): StatusReport {
+  return {
+    id: Number(report.id),
+    title: report.title,
+    affected: report.pageComponentIds.map(
+      (id) => componentNames.get(id) ?? id,
+    ),
+    updates: report.updates.map((update) => ({
+      date: new Date(update.date),
+      message: update.message,
+      status: updateTypeByStatus[update.status],
+      impactChanges: update.componentImpacts.map((c) => ({
+        name: componentNames.get(c.pageComponentId) ?? c.pageComponentId,
+        impact: impactByPageImpact[c.impact],
+      })),
+    })),
+  };
+}
+
+// Mirrors openstatus's own status-page calendar mapping: page-level reports
+// (start day) + maintenances (per day), plus per-component incidents from the
+// daily summary (per day, deduped across components). Raw daily check failures
+// without a recorded incident stay in the bars only, by design.
+function toCalendarMarkers(
+  reports: StatusReport[],
+  maintenances: Maintenance[],
+  components: PageComponentDailySummary[],
+): StatusCalendarMarker[] {
+  const markers: StatusCalendarMarker[] = [];
+
+  for (const report of reports) {
+    const updates = [...report.updates].sort(
+      (a, b) => a.date.getTime() - b.date.getTime(),
+    );
+    const startedAt = updates[0]?.date;
+    if (!startedAt) continue;
+    const lastUpdate = updates[updates.length - 1];
+    const resolvedAt =
+      lastUpdate?.status === "resolved" ? lastUpdate.date : null;
+    markers.push({
+      id: `report-${report.id}`,
+      date: startOfDay(startedAt),
+      status: "degraded",
+      type: "report",
+      name: report.title,
+      from: startedAt,
+      to: resolvedAt,
+    });
+  }
+
+  for (const m of maintenances) {
+    const start = startOfDay(minDate([m.from, m.to]));
+    const end = startOfDay(maxDate([m.from, m.to]));
+    for (const day of eachDayOfInterval({ start, end })) {
+      markers.push({
+        id: `maintenance-${m.id}-${day.toISOString()}`,
+        date: day,
+        status: "info",
+        type: "maintenance",
+        name: m.title,
+        from: m.from,
+        to: m.to,
+      });
+    }
+  }
+
+  const seenIncidents = new Set<string>();
+  for (const component of components) {
+    for (const ev of component.events) {
+      if (ev.type !== ComponentEventType.INCIDENT) continue;
+      if (seenIncidents.has(ev.id)) continue;
+      seenIncidents.add(ev.id);
+      const from = new Date(ev.from);
+      const to = ev.to ? new Date(ev.to) : null;
+      const start = startOfDay(from);
+      const end = startOfDay(to ?? new Date());
+      for (const day of eachDayOfInterval({ start, end })) {
+        markers.push({
+          id: `incident-${ev.id}-${day.toISOString()}`,
+          date: day,
+          status: "error",
+          type: "incident",
+          name: ev.name,
+          from,
+          to,
+        });
+      }
+    }
+  }
+
+  return markers;
+}
+
+function toMaintenance(
+  maintenance: MaintenanceSummary,
+  componentNames: Map<string, string>,
+): Maintenance {
+  return {
+    id: Number(maintenance.id),
+    title: maintenance.title,
+    affected: maintenance.pageComponentIds.map(
+      (id) => componentNames.get(id) ?? id,
+    ),
+    message: maintenance.message,
+    from: new Date(maintenance.from),
+    to: new Date(maintenance.to),
+  };
+}
+
+export async function loadStatusPage(options: {
+  apiKey: string;
+  pageId: string;
+}): Promise<StatusPageView> {
+  const client = createClient(options.apiKey);
+  const pages = client.statusPage.v1.StatusPageService;
+  const identifier = { case: "id" as const, value: options.pageId };
+
+  const [content, overall, daily] = await Promise.all([
+    pages.getStatusPageContent({ identifier }),
+    pages.getOverallStatus({ identifier }),
+    pages.getPageComponentDailySummary({ identifier, days: 45 }),
+  ]);
+
+  const variantByComponent = new Map(
+    overall.componentStatuses.map((c) => [
+      c.componentId,
+      variantByStatus[c.status],
+    ]),
+  );
+
+  const dailyByComponent = new Map(
+    daily.components.map((c) => [c.componentId, c]),
+  );
+
+  const toView = (c: PageComponent): ComponentView => {
+    const summary = dailyByComponent.get(c.id);
+    const variant = variantByComponent.get(c.id) ?? "info";
+    const isStatic = c.type === PageComponentType.STATIC;
+    return {
+      id: c.id,
+      name: c.name,
+      description: c.description,
+      variant,
+      // static components carry no uptime metric, only a declared status
+      uptime: isStatic || !summary ? null : uptimeFromBuckets(summary),
+      data: !summary
+        ? []
+        : isStatic
+          ? staticBars(summary, variant)
+          : toStatusBarData(summary),
+    };
+  };
+
+  const byOrder = (a: PageComponent, b: PageComponent) => a.order - b.order;
+  const ungrouped = content.components
+    .filter((c) => !c.groupId)
+    .sort(byOrder)
+    .map(toView);
+
+  const groups = content.groups.map((group: PageComponentGroup): GroupView => {
+    const members = content.components
+      .filter((c) => c.groupId === group.id)
+      .sort((a, b) => a.groupOrder - b.groupOrder)
+      .map(toView);
+    return {
+      id: group.id,
+      title: group.name,
+      defaultOpen: group.defaultOpen,
+      variant: worstVariant(members.map((m) => m.variant)),
+      components: members,
+    };
+  });
+
+  const componentNames = new Map(
+    content.components.map((c) => [c.id, c.name]),
+  );
+
+  const statusReports = content.statusReports.map((r) =>
+    toStatusReport(r, componentNames),
+  );
+  const maintenances = content.maintenances.map((m) =>
+    toMaintenance(m, componentNames),
+  );
+
+  return {
+    title: content.statusPage?.title ?? "Status Page",
+    description: content.statusPage?.description ?? "",
+    status: variantByStatus[overall.overallStatus],
+    ungrouped,
+    groups,
+    statusReports,
+    maintenances,
+    markers: toCalendarMarkers(statusReports, maintenances, daily.components),
+  };
+}

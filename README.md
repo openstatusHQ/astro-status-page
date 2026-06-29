@@ -2,7 +2,6 @@
 
 Built by [OpenStatus](https://www.openstatus.dev)
 
-
 ## Demo 🚀
 
 [https://astro.openstat.us](https://astro.openstat.us)
@@ -13,18 +12,16 @@ It's a simple status page, bring your OpenStatus API key and you're good to go!
 
 Fork it, tweak it, make it yours 🚀
 
-
 ## Tech Stack 📚
 
 - [Astro](https://astro.build)
 - [OpenStatus](https://www.openstatus.dev)
-- [Cloudflare Pages](https://pages.cloudflare.com)
+- [Cloudflare Workers](https://workers.cloudflare.com)
 - [Tailwind CSS](https://tailwindcss.com)
 
 ## Getting Started 🚀
 
 To start your own status page, you'll need to create an account on [OpenStatus](https://www.openstatus.dev) create some monitor. Once you've done that, you'll need to create a new API key in the settings and copy it.
-
 
 ### Development 🧑‍💻
 
@@ -45,29 +42,25 @@ To start your own status page, you'll need to create an account on [OpenStatus](
 5. Start the dev server
 
 ```bash
-pnpm pages:dev
+pnpm dev
 ```
-6. Customize it 🧑‍🎨
 
+6. Customize it 🧑‍🎨
 
 ### Deployement 🚀
 
-You can easily deploy your status page on [Cloudflare Pages](https://pages.cloudflare.com).
+You can easily deploy your status page on [Cloudflare Workers](https://workers.cloudflare.com).
 
-1. Set the API key in the environment variables of your worker
-   - Go to your worker settings
-   - Add a new variable named `API_KEY` and paste your OpenStatus API key
+1. Set the API key as a secret on your worker:
+
+```bash
+npx wrangler secret put API_KEY
+```
 
 2. run the following command:
 
 ```bash
-pnpm pages:deploy
+pnpm run deploy
 ```
 
 3. Profit 🔥
-
-
-
-
-
-

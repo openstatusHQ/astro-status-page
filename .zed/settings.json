@@ -1,0 +1,11 @@
+{
+  "language_servers": [
+    "prettier",
+    "vtsls",
+    "astro-language-server",
+    "color-lsp",
+    "bash-language-server",
+    "tailwindcss-language-server",
+    "json-language-server"
+  ]
+}
