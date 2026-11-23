@@ -2,12 +2,14 @@
 import { ConnectError } from "@connectrpc/connect";
 import { API_KEY, STATUS_PAGE_ID } from "astro:env/server";
 import { StatusPage } from "../components/status-page";
+import { CACHEABLE } from "../middleware";
 import { loadStatusPage } from "../utils/openstatus";
 import "../styles/global.css";
 
 let view = null;
 try {
   view = await loadStatusPage({ apiKey: API_KEY, pageId: STATUS_PAGE_ID });
+  Astro.response.headers.set(CACHEABLE, "1");
 } catch (error) {
   if (!(error instanceof ConnectError)) throw error;
   console.error(`Failed to load status page: ${error.code} ${error.message}`);
